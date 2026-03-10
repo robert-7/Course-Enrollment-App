@@ -20,7 +20,7 @@ docker compose build
 docker compose up -d
 ```
 
-The app will be available at [http://localhost:5000](http://localhost:5000). The Swagger API docs are at [http://localhost:5000/api](http://localhost:5000/api).
+The app will be available at [http://localhost:5000](http://localhost:5000). The Swagger API docs are at [http://localhost:5000/api/docs](http://localhost:5000/api/docs).
 
 To tear everything down:
 
