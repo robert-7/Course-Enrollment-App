@@ -22,60 +22,6 @@ from application.models import User
 
 # TODO: We should be using global strings within flash() functions
 
-# TODO: this should be removed, but it's still being read in
-courseData = [
-    {
-        "courseID": "CSC108",
-        "title": "Introduction to Computer Programming",
-        "description": (
-            "An introduction to computer programming using Python."
-            " Program structure, control flow, data types, and functions."
-        ),
-        "credits": 3,
-        "term": "Fall, Winter",
-    },
-    {
-        "courseID": "CSC148",
-        "title": "Introduction to Computer Science",
-        "description": (
-            "Abstract data types, object-oriented programming,"
-            " algorithm analysis, and linked data structures."
-        ),
-        "credits": 3,
-        "term": "Fall, Winter",
-    },
-    {
-        "courseID": "CSC207",
-        "title": "Software Design",
-        "description": (
-            "Design patterns, clean architecture, version control,"
-            " and agile methodologies for building software systems."
-        ),
-        "credits": 3,
-        "term": "Fall, Winter",
-    },
-    {
-        "courseID": "CSC209",
-        "title": "Software Tools and Systems Programming",
-        "description": (
-            "Shell scripting, processes, system calls,"
-            " and C programming for Unix-based systems."
-        ),
-        "credits": 3,
-        "term": "Fall",
-    },
-    {
-        "courseID": "CSC263",
-        "title": "Data Structures and Analysis",
-        "description": (
-            "Algorithm analysis, priority queues, sorting, hashing,"
-            " amortized analysis, and graph algorithms."
-        ),
-        "credits": 3,
-        "term": "Winter",
-    },
-]
-
 
 ###################################################
 
