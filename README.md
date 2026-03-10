@@ -1,12 +1,36 @@
 # Course Enrollment App
 
+![Python](https://img.shields.io/badge/Python-3.13-blue?logo=python&logoColor=white)
+![Flask](https://img.shields.io/badge/Flask-3.1-lightgrey?logo=flask&logoColor=white)
+![MongoDB](https://img.shields.io/badge/MongoDB-8.2-green?logo=mongodb&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-Compose-blue?logo=docker&logoColor=white)
+
 A full-stack Flask web application for course enrollment with user
 authentication, MongoDB-backed data models, REST APIs with Swagger docs,
 and a fully containerized Docker Compose setup.
 
-## Getting Set Up
+![App Walkthrough](docs/walkthrough.gif)
 
-Please see [the setup documentation](SETUP.md) regarding this.
+## Quick Start
+
+Make sure [Docker](https://docs.docker.com/get-docker/) is installed, then run:
+
+```bash
+docker compose build
+docker compose up -d
+```
+
+The app will be available at [http://localhost:5000](http://localhost:5000). The Swagger API docs are at [http://localhost:5000/api](http://localhost:5000/api).
+
+To tear everything down:
+
+```bash
+docker compose down -v
+```
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for environment setup, linting, Postman, and other developer instructions.
 
 ## Features to try
 
