@@ -32,17 +32,36 @@ docker compose down -v
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for environment setup, linting, Postman, and other developer instructions.
 
-## Features to try
+## Features
+
+- **User registration & login** — session-based auth with hashed passwords (Werkzeug)
+- **Course catalog** — browse courses pulled from MongoDB, filterable by term
+- **Course enrollment** — enroll in courses with duplicate-enrollment protection
+- **Enrollment dashboard** — view your enrolled courses via MongoDB aggregation
+- **REST API** — full CRUD for users at `/api` with Swagger UI docs (flask-restx)
+- **Dockerized stack** — Flask, MongoDB, and seed data orchestrated via Docker Compose
+- **CI/CD** — GitHub Actions workflows with pre-commit linting (flake8, markdownlint)
 
 Please see [the testing documentation](TESTING.md) that showcases an end-to-end demo of features supported.
 
-## Notes about Files and Folders
+## Architecture
 
-Some important files and folders are seen below:
+The app runs as three Docker Compose services:
 
-* **application/** — Flask app (routes, models, forms, templates)
-* **mongo-setup/** — MongoDB seed data and initialization script
-* **Docker Compose** orchestrates the Flask app, MongoDB, and seed containers
+| Service | Description |
+|---------|-------------|
+| **flask-app** | Python/Flask web server on port 5000 |
+| **mongodb** | MongoDB 8.2 database with persistent volume |
+| **mongo-seed** | One-shot container that imports course data on first run |
+
+```plaintext
+Browser :5000 ──► flask-app ──► mongodb :27017
+                                   ▲
+                              mongo-seed
+                          (imports courses.json)
+```
+
+The Flask app follows a single-module structure under [`application/`](application/README.md).
 
 ## Acknowledgments
 
