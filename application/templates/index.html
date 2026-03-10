@@ -3,16 +3,23 @@
 {% block content %}
 
     <div class="row">
-        <div class="col-md-12 text-center">
+        <div class="col-md-8 offset-md-2 text-center">
             <h1>Welcome to Network Operations University.</h1>
+            <p class="lead mt-3">
+                Browse our course catalog, enroll in classes, and manage your schedule — all in one place.
+            </p>
 
             {% if session["username"] %}
-                <h3>Let's get started.</h3>
+                <hr class="my-4">
+                <a href="{{ url_for('courses') }}" class="btn btn-primary btn-lg me-2">Browse Courses</a>
+                <a href="{{ url_for('enrollment') }}" class="btn btn-outline-secondary btn-lg">My Enrollment</a>
             {% else %}
-                <p>Already registered? <a href="{{ url_for('login') }}">Login</a></p>
+                <hr class="my-4">
+                <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg me-2">Get Started</a>
+                <a href="{{ url_for('login') }}" class="btn btn-outline-secondary btn-lg">Login</a>
             {% endif %}
 
-            </div>
+        </div>
     </div>
 
 {% endblock %}
