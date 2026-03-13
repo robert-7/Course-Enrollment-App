@@ -25,64 +25,20 @@ from application.models import User
 ###################################################
 
 
-@api.route("/api", "/api/")
-class GetAndPost(Resource):
-    # GET all
+@api.route("/courses", "/courses/")
+class CoursesApi(Resource):
     def get(self):
-        return jsonify(
-            json.loads(User.objects.all().to_json(json_options=RELAXED_JSON_OPTIONS))
-        )
-
-    # POST all
-    def post(self):
-        data = api.payload
-        if User.objects(user_id=data["user_id"]):
-            return {"error": "User ID already exists"}, 409
-        if User.objects(email=data["email"]):
-            return {"error": "Email already exists"}, 409
-        user = User(
-            user_id=data["user_id"],
-            email=data["email"],
-            first_name=data["first_name"],
-            last_name=data["last_name"],
-        )
-        user.set_password(data["password"])
-        user.save()
-        return jsonify(
-            json.loads(
-                User.objects(user_id=data["user_id"]).to_json(
-                    json_options=RELAXED_JSON_OPTIONS
-                )
-            )
-        )
+        courses = Course.objects.order_by("+courseID")
+        return jsonify(json.loads(courses.to_json(json_options=RELAXED_JSON_OPTIONS)))
 
 
-@api.route("/api/<idx>")
-class GetUpdateDelete(Resource):
-    # GET one
-    def get(self, idx):
-        return jsonify(
-            json.loads(
-                User.objects(user_id=idx).to_json(json_options=RELAXED_JSON_OPTIONS)
-            )
-        )
-
-    # PUT one
-    def put(self, idx):
-        data = api.payload
-        user = User.objects(user_id=idx)
-        user.update(**data)
-        return jsonify(
-            json.loads(
-                User.objects(user_id=idx).to_json(json_options=RELAXED_JSON_OPTIONS)
-            )
-        )
-
-    # DELETE one
-    def delete(self, idx):
-        user = User.objects(user_id=idx)
-        user.delete()
-        return jsonify("User is deleted!")
+@api.route("/courses/<course_id>")
+class CourseApi(Resource):
+    def get(self, course_id):
+        course = Course.objects(courseID=course_id)
+        if not course:
+            return {"error": "Course not found"}, 404
+        return jsonify(json.loads(course.to_json(json_options=RELAXED_JSON_OPTIONS)))
 
 
 ###################################################
@@ -93,6 +49,13 @@ def redirect_root():
     """Redirects root to /home."""
     if request.path == "/":
         return redirect(url_for("index"))
+
+
+@app.route("/api")
+@app.route("/api/")
+def api_root():
+    """Redirect API root to interactive docs."""
+    return redirect("/api/v1/docs")
 
 
 @app.route("/home")
