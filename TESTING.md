@@ -67,6 +67,18 @@ npx playwright install chromium
 docker compose up -d --build
 ```
 
+### Run the walkthrough in Docker (no local npm needed)
+
+```bash
+docker compose run --rm e2e-tests
+```
+
+From Makefile:
+
+```bash
+make e2e-docker
+```
+
 ### Run the automated walkthrough
 
 ```bash
@@ -99,8 +111,10 @@ This executes [e2e/ui-walkthrough.spec.js](e2e/ui-walkthrough.spec.js) against
 - `npm run e2e` : all Playwright tests (headless)
 - `npm run e2e:headed` : all Playwright tests (headed)
 - `npm run e2e:report` : open HTML test report
+- `docker compose run --rm e2e-tests` : run walkthrough from Docker container
 - `npm run e2e:walkthrough:fast` : walkthrough with fast form input (`PW_FAST_INPUT=1`)
 - `npm run e2e:walkthrough:demo` : walkthrough with `PW_SLOWMO=400` for demos
+- `make e2e-docker` : Docker-only walkthrough via Makefile target
 - `make e2e-fast` : fast walkthrough via Makefile target
 - `make e2e-demo` : demo walkthrough via Makefile target
 

@@ -1,4 +1,4 @@
-.PHONY: run test e2e-demo e2e-fast seed lint clean
+.PHONY: run test e2e-demo e2e-fast e2e-docker seed lint clean
 
 ## Start the app
 run:
@@ -15,6 +15,10 @@ e2e-demo:
 ## Run end-to-end walkthrough quickly
 e2e-fast:
 	npm run e2e:walkthrough:fast
+
+## Run end-to-end walkthrough in Docker (no local npm required)
+e2e-docker:
+	docker compose run --rm e2e-tests
 
 ## Re-seed the database
 seed:
