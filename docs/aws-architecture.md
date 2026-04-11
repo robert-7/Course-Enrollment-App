@@ -1,4 +1,4 @@
-# AWS Architecture — Course Enrollment App
+# AWS Architecture -- Course Enrollment App
 
 This document is the single source of truth for the AWS deployment design of the Course Enrollment App.
 It captures architecture decisions, the system diagram, cost estimates, and the release strategy.
@@ -7,17 +7,17 @@ It captures architecture decisions, the system diagram, cost estimates, and the 
 
 ## Architecture Decision Records
 
-### ADR-001: Container Orchestration — ECS Fargate
+### ADR-001: Container Orchestration -- ECS Fargate
 
 | | |
 |---|---|
 | **Decision** | ECS Fargate |
 | **Alternatives considered** | EC2, EKS, App Runner |
-| **Rationale** | Serverless containers — no EC2 patching, scales to zero when desired count is set to 0 (ideal for demo/cost control), and is the cheapest managed container option at this scale. |
+| **Rationale** | Serverless containers -- no EC2 patching, scales to zero when desired count is set to 0 (ideal for demo/cost control), and is the cheapest managed container option at this scale. |
 
 ---
 
-### ADR-002: Database — MongoDB Atlas M0
+### ADR-002: Database -- MongoDB Atlas M0
 
 | | |
 |---|---|
@@ -27,7 +27,7 @@ It captures architecture decisions, the system diagram, cost estimates, and the 
 
 ---
 
-### ADR-003: Secrets Management — SSM Parameter Store
+### ADR-003: Secrets Management -- SSM Parameter Store
 
 | | |
 |---|---|
@@ -37,7 +37,7 @@ It captures architecture decisions, the system diagram, cost estimates, and the 
 
 ---
 
-### ADR-004: GitHub → AWS Authentication — OIDC (Keyless)
+### ADR-004: GitHub → AWS Authentication -- OIDC (Keyless)
 
 | | |
 |---|---|
@@ -47,7 +47,7 @@ It captures architecture decisions, the system diagram, cost estimates, and the 
 
 ---
 
-### ADR-005: Infrastructure as Code — AWS CDK (Python)
+### ADR-005: Infrastructure as Code -- AWS CDK (Python)
 
 | | |
 |---|---|
@@ -57,7 +57,7 @@ It captures architecture decisions, the system diagram, cost estimates, and the 
 
 ---
 
-### ADR-006: Load Balancer — Application Load Balancer (ALB)
+### ADR-006: Load Balancer -- Application Load Balancer (ALB)
 
 | | |
 |---|---|
@@ -112,7 +112,7 @@ flowchart TD
 | SSM Parameter Store | Standard tier | $0 |
 | MongoDB Atlas | M0 free cluster | $0 |
 | CloudWatch Logs | Free tier: 5 GB ingestion/month | $0 |
-| **Total** | | **~$10–26/month** |
+| **Total** | | **~$10-26/month** |
 
 > **Cost-saving tip:** Set ECS desired count to `0` when not demoing.
 > This reduces the Fargate charge to ~$0, bringing the total monthly cost to near $0 while retaining all infrastructure.
@@ -135,12 +135,12 @@ The current AWS deployment milestone is **v2.0.0**.
 
 ### Release process
 
-1. **Feature branch** — all work is done on a branch off `main`.
-1. **Pull request** — PR is opened; CI runs linting, unit tests, and Playwright e2e tests.
-1. **Merge to `main`** — triggers the CD pipeline:
+1. **Feature branch** -- all work is done on a branch off `main`.
+1. **Pull request** -- PR is opened; CI runs linting, unit tests, and Playwright e2e tests.
+1. **Merge to `main`** -- triggers the CD pipeline:
    - Docker image is built and pushed to ECR, tagged with the Git SHA and the semantic version tag (e.g., `v2.1.0`).
    - ECS service is updated via `force-new-deployment`; the old task is drained gracefully by the ALB.
-1. **GitHub Release** — a GitHub Release is created from the version tag, auto-generating a changelog from merged PRs.
+1. **GitHub Release** -- a GitHub Release is created from the version tag, auto-generating a changelog from merged PRs.
 
 ### Docker image tagging convention
 
