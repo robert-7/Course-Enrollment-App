@@ -46,6 +46,13 @@ repos:
     hooks:
       - id: pyupgrade
 
+  # unicode character normalization
+  - repo: https://github.com/sirosen/texthooks
+    rev: 0.7.1
+    hooks:
+      - id: fix-smartquotes
+      - id: fix-unicode-dashes
+
   # markdown linting
   - repo: https://github.com/markdownlint/markdownlint
     rev: v0.13.0  # NOTE: v0.15.0 is giving a headache with pre-commit

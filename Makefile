@@ -3,7 +3,7 @@
 ## Generate .env with a random SECRET_KEY (skips if .env already exists)
 setup:
 	@if [ -f .env ]; then \
-		echo ".env already exists — skipping. Delete it first to regenerate."; \
+		echo ".env already exists -- skipping. Delete it first to regenerate."; \
 	else \
 		echo "SECRET_KEY=$$(python3 -c 'import secrets; print(secrets.token_hex(32))')" > .env; \
 		echo ".env created with a fresh SECRET_KEY."; \

@@ -38,7 +38,7 @@ cd Course-Enrollment-App
 ## Environment Variables
 
 The app requires a `SECRET_KEY` environment variable to be set before starting.
-This key is used by Flask for session signing and CSRF protection — it must be
+This key is used by Flask for session signing and CSRF protection -- it must be
 a strong random value and must **not** be hardcoded or committed to source control.
 
 Run the setup command to generate a `.env` file with a fresh key automatically:
@@ -55,7 +55,7 @@ SECRET_KEY=<randomly generated value>
 ```
 
 Docker Compose automatically loads `.env`, so `make run` will pick it up.
-If `.env` already exists, `make setup` is a no-op — delete the file first to
+If `.env` already exists, `make setup` is a no-op -- delete the file first to
 regenerate.
 
 ## Virtual Environment

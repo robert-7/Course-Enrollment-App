@@ -76,13 +76,13 @@ For full details, see [TESTING.md](TESTING.md).
 
 ## Features
 
-- **User registration & login** — session-based auth with hashed passwords (Werkzeug)
-- **Course catalog** — browse courses pulled from MongoDB, filterable by term
-- **Course enrollment** — enroll in courses with duplicate-enrollment protection, CSRF-protected form
-- **Enrollment dashboard** — view your enrolled courses via MongoDB aggregation
-- **REST API** — authenticated course endpoints at `/api/v1/courses` with Swagger UI docs (flask-restx)
-- **Dockerized stack** — Flask, MongoDB, and seed data orchestrated via Docker Compose
-- **CI/CD** — GitHub Actions workflows with pre-commit linting (flake8, markdownlint)
+- **User registration & login** -- session-based auth with hashed passwords (Werkzeug)
+- **Course catalog** -- browse courses pulled from MongoDB, filterable by term
+- **Course enrollment** -- enroll in courses with duplicate-enrollment protection, CSRF-protected form
+- **Enrollment dashboard** -- view your enrolled courses via MongoDB aggregation
+- **REST API** -- authenticated course endpoints at `/api/v1/courses` with Swagger UI docs (flask-restx)
+- **Dockerized stack** -- Flask, MongoDB, and seed data orchestrated via Docker Compose
+- **CI/CD** -- GitHub Actions workflows with pre-commit linting (flake8, markdownlint)
 
 Please see [the testing documentation](TESTING.md) that showcases an end-to-end demo of features supported.
 
