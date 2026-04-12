@@ -10,4 +10,4 @@ COPY . .
 RUN adduser --disabled-password --gecos '' appuser
 USER appuser
 
-CMD ["flask", "run", "--host=0.0.0.0"]
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "2", "main:app"]

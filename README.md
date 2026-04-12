@@ -29,6 +29,8 @@ HTTPS deployments on AWS must set `APP_ENV=production` so Flask marks session
 cookies as `Secure`.
 `FLASK_DEBUG=true` is for local Docker only and must never be set for
 production deployments.
+The production image now serves the app with Gunicorn, while
+`docker-compose.yaml` keeps `make run` on `flask run` for local development.
 
 To tear everything down:
 
