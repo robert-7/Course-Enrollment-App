@@ -2,6 +2,13 @@ from application.models import Enrollment
 from application.models import User
 
 
+def _session_cookie_header(response):
+    for header in response.headers.getlist("Set-Cookie"):
+        if header.startswith("session="):
+            return header
+    raise AssertionError("Expected a session cookie in the response")
+
+
 def test_index_page_loads(client):
     response = client.get("/index")
 
@@ -19,6 +26,24 @@ def test_root_redirects_to_index(client):
 
     assert response.status_code == 302
     assert response.headers["Location"].endswith("/index")
+
+
+def test_index_sets_security_headers(client):
+    response = client.get("/index")
+
+    assert response.headers["Content-Security-Policy"].startswith("default-src 'self'")
+    assert response.headers["X-Content-Type-Options"] == "nosniff"
+    assert response.headers["X-Frame-Options"] == "DENY"
+    assert "Strict-Transport-Security" not in response.headers
+
+
+def test_index_sets_hsts_header_when_enabled(client, monkeypatch):
+    monkeypatch.setitem(client.application.config, "ENABLE_HSTS", True)
+    monkeypatch.setitem(client.application.config, "HSTS_MAX_AGE", 600)
+
+    response = client.get("/index")
+
+    assert response.headers["Strict-Transport-Security"] == "max-age=600"
 
 
 def test_courses_route_renders_courses(client, seed_courses):
@@ -59,6 +84,69 @@ def test_login_success_sets_session_and_redirects(client, registered_user):
 
     assert response.status_code == 302
     assert response.headers["Location"].endswith("/index")
+
+
+def test_login_sets_secure_cookie_attribute_when_enabled(
+    client, monkeypatch, registered_user
+):
+    monkeypatch.setitem(client.application.config, "SESSION_COOKIE_SECURE", True)
+
+    response = client.post(
+        "/login",
+        data={
+            "email": registered_user.email,
+            "password": "secret12",
+        },
+        follow_redirects=False,
+    )
+
+    assert "Secure;" in _session_cookie_header(response)
+
+
+def test_login_omits_secure_cookie_attribute_when_disabled(
+    client, monkeypatch, registered_user
+):
+    monkeypatch.setitem(client.application.config, "SESSION_COOKIE_SECURE", False)
+
+    response = client.post(
+        "/login",
+        data={
+            "email": registered_user.email,
+            "password": "secret12",
+        },
+        follow_redirects=False,
+    )
+
+    assert "Secure;" not in _session_cookie_header(response)
+
+
+def test_login_sets_lax_samesite_cookie_attribute(client, registered_user):
+    response = client.post(
+        "/login",
+        data={
+            "email": registered_user.email,
+            "password": "secret12",
+        },
+        follow_redirects=False,
+    )
+
+    assert "SameSite=Lax" in _session_cookie_header(response)
+
+
+def test_login_marks_session_permanent_and_sets_expiry_cookie(client, registered_user):
+    response = client.post(
+        "/login",
+        data={
+            "email": registered_user.email,
+            "password": "secret12",
+        },
+        follow_redirects=False,
+    )
+
+    with client.session_transaction() as session:
+        assert session.permanent is True
+
+    assert "Expires=" in _session_cookie_header(response)
 
 
 def test_login_failure_shows_error(client, registered_user):
@@ -123,10 +211,16 @@ def test_courses_with_explicit_term(client, seed_courses):
 
 
 def test_logout_clears_session_and_redirects(logged_in_client):
+    with logged_in_client.session_transaction() as session:
+        session["extra_key"] = "leftover"
+
     response = logged_in_client.get("/logout", follow_redirects=False)
 
     assert response.status_code == 302
     assert response.headers["Location"].endswith("/index")
+
+    with logged_in_client.session_transaction() as session:
+        assert dict(session) == {}
 
     response = logged_in_client.get("/enrollment", follow_redirects=False)
     assert response.status_code == 302
