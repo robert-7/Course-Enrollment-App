@@ -103,6 +103,10 @@ flowchart TD
 > is sensitive and must not be stored in the ECS task definition, where it would be visible in plaintext
 > via the AWS console and ECS API. Storing it in SSM Standard tier costs nothing.
 >
+> **Why set `APP_ENV=production` in ECS?** The Flask app defaults to `development` when `APP_ENV` is unset
+> so local Docker can still work over plain HTTP. In ECS behind an HTTPS ALB, `APP_ENV=production` must be
+> set so session cookies are emitted with the `Secure` attribute and browsers will send them only over HTTPS.
+>
 > **Why CloudWatch Logs?** CloudWatch is the native log driver for ECS Fargate
 > ([`awslogs` driver](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/using_awslogs.html))
 > and requires no extra infrastructure or agents. The [free tier](https://aws.amazon.com/cloudwatch/pricing/)

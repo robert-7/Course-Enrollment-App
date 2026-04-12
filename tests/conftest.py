@@ -10,6 +10,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 # Set before importing the Flask app module, which connects at import-time.
+os.environ.setdefault("APP_ENV", "testing")
 os.environ.setdefault("MONGO_URI", "mongodb://localhost:27017/course_enrollment")
 os.environ.setdefault("SECRET_KEY", "test-secret-key-do-not-use-in-production")
 
@@ -44,7 +45,6 @@ def _reset_collections():
 @pytest.fixture
 def test_app():
     app.config.update(
-        TESTING=True,
         WTF_CSRF_ENABLED=False,
     )
     return app

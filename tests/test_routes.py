@@ -2,6 +2,13 @@ from application.models import Enrollment
 from application.models import User
 
 
+def _session_cookie_header(response):
+    for header in response.headers.getlist("Set-Cookie"):
+        if header.startswith("session="):
+            return header
+    raise AssertionError("Expected a session cookie in the response")
+
+
 def test_index_page_loads(client):
     response = client.get("/index")
 
@@ -59,6 +66,40 @@ def test_login_success_sets_session_and_redirects(client, registered_user):
 
     assert response.status_code == 302
     assert response.headers["Location"].endswith("/index")
+
+
+def test_login_sets_secure_cookie_attribute_when_enabled(
+    client, monkeypatch, registered_user
+):
+    monkeypatch.setitem(client.application.config, "SESSION_COOKIE_SECURE", True)
+
+    response = client.post(
+        "/login",
+        data={
+            "email": registered_user.email,
+            "password": "secret12",
+        },
+        follow_redirects=False,
+    )
+
+    assert "Secure;" in _session_cookie_header(response)
+
+
+def test_login_omits_secure_cookie_attribute_when_disabled(
+    client, monkeypatch, registered_user
+):
+    monkeypatch.setitem(client.application.config, "SESSION_COOKIE_SECURE", False)
+
+    response = client.post(
+        "/login",
+        data={
+            "email": registered_user.email,
+            "password": "secret12",
+        },
+        follow_redirects=False,
+    )
+
+    assert "Secure;" not in _session_cookie_header(response)
 
 
 def test_login_failure_shows_error(client, registered_user):

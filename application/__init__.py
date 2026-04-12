@@ -3,11 +3,11 @@ from flask import Flask
 from flask_restx import Api
 from flask_wtf.csrf import CSRFProtect
 
-from config import Config
+from config import get_config_for_env
 
 # initiate the main web app
 app = Flask(__name__)
-app.config.from_object(Config)
+app.config.from_object(get_config_for_env())
 
 # enable CSRF protection for all POST forms
 csrf = CSRFProtect(app)

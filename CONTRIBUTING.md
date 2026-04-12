@@ -41,6 +41,14 @@ The app requires a `SECRET_KEY` environment variable to be set before starting.
 This key is used by Flask for session signing and CSRF protection -- it must be
 a strong random value and must **not** be hardcoded or committed to source control.
 
+The optional `APP_ENV` variable selects the Flask config profile:
+
+```bash
+APP_ENV=development  # default when unset; keeps local HTTP sessions working
+APP_ENV=testing      # used by pytest
+APP_ENV=production   # required for HTTPS deployments so session cookies are Secure
+```
+
 Run the setup command to generate a `.env` file with a fresh key automatically:
 
 ```bash
