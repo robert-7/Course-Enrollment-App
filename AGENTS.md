@@ -25,7 +25,8 @@
   `pre-commit run --files <changed files>`.
 - For route, model, form, or shared behavior changes, run `pytest`.
 - For CI-equivalent Python validation, run
-  `pytest --cov=application --cov-report=term-missing --cov-fail-under=100`.
+  `pytest --cov=application --cov-report=term-missing --cov-fail-under=100`
+  or `make codecov`.
 - For formatting and linting across the repo, run `pre-commit run --all-files`
   or `make lint`.
 - For Docker/local stack verification, use `make setup`, `make run`, and

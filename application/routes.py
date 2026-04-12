@@ -12,9 +12,11 @@ from flask import send_from_directory
 from flask import session
 from flask import url_for
 from flask_restx import Resource
+from mongoengine.errors import NotUniqueError
 
 from application import api
 from application import app
+from application import limiter
 from application.course_list import course_list_for_user
 from application.forms import LoginForm
 from application.forms import RegisterForm
@@ -33,6 +35,36 @@ def login_required_api(f):
         return f(*args, **kwargs)
 
     return wrapper
+
+
+###################################################
+
+
+def _next_user_id():
+    latest_user = User.objects.only("user_id").order_by("-user_id").first()
+    if latest_user is None or latest_user.user_id is None:
+        return 1
+    return latest_user.user_id + 1
+
+
+def _register_user(email, password, first_name, last_name, max_attempts=5):
+    for _ in range(max_attempts):
+        user = User(
+            user_id=_next_user_id(),
+            email=email,
+            first_name=first_name,
+            last_name=last_name,
+        )
+        user.set_password(password)
+        try:
+            user.save()
+        except NotUniqueError:
+            # Another registration won the same user_id or email race; retry safely.
+            if User.objects(email=email).first():
+                return None
+            continue
+        return user
+    return None
 
 
 ###################################################
@@ -83,6 +115,7 @@ def index():
 
 
 @app.route("/login", methods=["GET", "POST"])
+@limiter.limit("5 per minute", methods=["POST"])
 def login():
     """Returns the login page content."""
     if session.get("username"):
@@ -105,7 +138,7 @@ def login():
     return render_template("login.html", title="Login", form=form, login=True)
 
 
-@app.route("/logout")
+@app.route("/logout", methods=["POST"])
 def logout():
     session.clear()
     return redirect(url_for("index"))
@@ -123,23 +156,23 @@ def courses(term=None):
 
 
 @app.route("/register", methods=["POST", "GET"])
+@limiter.limit("5 per minute", methods=["POST"])
 def register():
     """Returns the registration page content."""
     if session.get("username"):
         return redirect(url_for("index"))
     form = RegisterForm()
     if form.validate_on_submit():
-        user_id = User.objects.count()
-        user_id += 1
         email = form.email.data
         password = form.password.data
         first_name = form.first_name.data
         last_name = form.last_name.data
-        user = User(
-            user_id=user_id, email=email, first_name=first_name, last_name=last_name
-        )
-        user.set_password(password)
-        user.save()
+        user = _register_user(email, password, first_name, last_name)
+        if not user:
+            flash("Registration failed. Please check your details.", "danger")
+            return render_template(
+                "register.html", title="Register", form=form, register=True
+            )
         flash("You are successfully registered!", "success")
         return redirect(url_for("index"))
     return render_template("register.html", title="Register", form=form, register=True)
@@ -152,22 +185,25 @@ def enrollment():
         return redirect(url_for("login"))
 
     courseID = request.form.get("courseID")
-    courseTitle = request.form.get("title")
     user_id = session.get("user_id")
 
     # we check if we're coming from the course page here
     # if there's a courseID, it means we're enrolling in a course
     if courseID:
+        course = Course.objects(courseID=courseID).first()
+        if not course:
+            flash("Course not found.", "danger")
+            return redirect(url_for("enrollment"))
         if Enrollment.objects(user_id=user_id, courseID=courseID):
             flash(
-                f"Oops! You are already registered in course {courseTitle}!",
+                f"Oops! You are already registered in course {course.title}!",
                 "danger",
             )
             return redirect(url_for("courses"))
         else:
             enrollment = Enrollment(user_id=user_id, courseID=courseID)
             enrollment.save()
-            flash(f"You are enrolled in {courseTitle}!", "success")
+            flash(f"You are enrolled in {course.title}!", "success")
 
     courses = course_list_for_user(user_id)
     return render_template(

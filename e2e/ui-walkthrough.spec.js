@@ -50,7 +50,7 @@ test('UI walkthrough from TESTING.md', async ({ page }) => {
   await expect(page).toHaveURL(/\/index$/);
   await expect(page.getByRole('link', { name: 'Register' })).toHaveCount(0);
   await expect(page.getByRole('link', { name: 'Login' })).toHaveCount(0);
-  await expect(page.getByRole('link', { name: 'Logout' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Logout' })).toBeVisible();
 
   // 7. Authenticated API access: course list is accessible when logged in.
   await page.goto('/api/v1/courses');
@@ -72,7 +72,7 @@ test('UI walkthrough from TESTING.md', async ({ page }) => {
 
   // 11. Logout and verify logged-out state.
   await page.goto('/index');
-  await page.getByRole('link', { name: 'Logout' }).click();
+  await page.getByRole('button', { name: 'Logout' }).click();
   await expect(page).toHaveURL(/\/index$/);
   await expect(page.locator('nav').getByRole('link', { name: 'Login' })).toBeVisible();
 
