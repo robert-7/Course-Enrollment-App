@@ -20,3 +20,7 @@ seed_collection() {
 
 seed_collection "user"   "${MOUNT_PATH}/users.json"
 seed_collection "course" "${MOUNT_PATH}/courses.json"
+
+echo "Dropping stale enrollment data..."
+mongosh --host "${HOST}" --eval "db.getSiblingDB('${DB}').enrollment.drop()"
+echo "Done dropping enrollment collection."
