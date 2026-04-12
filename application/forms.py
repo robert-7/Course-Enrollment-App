@@ -42,4 +42,4 @@ class RegisterForm(FlaskForm):
         user = User.objects(email=email.data)
         user = user.first()
         if user:
-            raise ValidationError("Email is already in use. Pick another one.")
+            raise ValidationError("Registration failed. Please check your details.")

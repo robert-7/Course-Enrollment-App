@@ -1,4 +1,7 @@
+from mongoengine.errors import NotUniqueError
+
 from application import limiter
+from application import routes as routes_module
 from application.models import Enrollment
 from application.models import User
 
@@ -294,6 +297,22 @@ def test_enrollment_creates_record_for_logged_in_user(logged_in_client, seed_cou
     assert Enrollment.objects(user_id=1, courseID="CSE100").count() == 1
 
 
+def test_enrollment_rejects_unknown_course(logged_in_client):
+    response = logged_in_client.post(
+        "/enrollment",
+        data={
+            "courseID": "NOPE999",
+            "title": "Ghost Course",
+            "term": "Fall 2026",
+        },
+        follow_redirects=True,
+    )
+
+    assert response.status_code == 200
+    assert b"Course not found." in response.data
+    assert Enrollment.objects(user_id=1, courseID="NOPE999").count() == 0
+
+
 def test_duplicate_enrollment_shows_error(logged_in_client, seed_courses):
     Enrollment(user_id=1, courseID="CSE100").save()
 
@@ -322,7 +341,7 @@ def test_logout_clears_session_and_redirects(logged_in_client):
     with logged_in_client.session_transaction() as session:
         session["extra_key"] = "leftover"
 
-    response = logged_in_client.get("/logout", follow_redirects=False)
+    response = logged_in_client.post("/logout", follow_redirects=False)
 
     assert response.status_code == 302
     assert response.headers["Location"].endswith("/index")
@@ -333,6 +352,12 @@ def test_logout_clears_session_and_redirects(logged_in_client):
     response = logged_in_client.get("/enrollment", follow_redirects=False)
     assert response.status_code == 302
     assert response.headers["Location"].endswith("/login")
+
+
+def test_logout_rejects_get_requests(client):
+    response = client.get("/logout", follow_redirects=False)
+
+    assert response.status_code == 405
 
 
 def test_login_redirects_when_already_logged_in(logged_in_client):
@@ -370,7 +395,92 @@ def test_register_duplicate_email_renders_form_with_error(client, registered_use
     )
 
     assert response.status_code == 200
-    assert b"Email is already in user" in response.data
+    assert b"Registration failed. Please check your details." in response.data
+    assert b"Email is already in use" not in response.data
+
+
+def test_register_user_returns_none_for_duplicate_email(registered_user):
+    result = routes_module._register_user(
+        registered_user.email, "secret123", "Repeat", "User"
+    )
+
+    assert result is None
+    assert User.objects(email=registered_user.email).count() == 1
+
+
+def test_register_retries_when_user_id_save_conflicts(
+    client, monkeypatch, registered_user
+):
+    original_save = User.save
+    raised_duplicate = {"value": False}
+
+    def save_with_one_conflict(self, *args, **kwargs):
+        if self.email == "retry@example.com" and not raised_duplicate["value"]:
+            raised_duplicate["value"] = True
+            raise NotUniqueError("duplicate unique key")
+        return original_save(self, *args, **kwargs)
+
+    monkeypatch.setattr(User, "save", save_with_one_conflict)
+
+    response = client.post(
+        "/register",
+        data={
+            "email": "retry@example.com",
+            "password": "secret123",
+            "password_confirm": "secret123",
+            "first_name": "Retry",
+            "last_name": "User",
+        },
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 302
+    assert response.headers["Location"].endswith("/index")
+    assert User.objects(email="retry@example.com").count() == 1
+    assert User.objects.get(email="retry@example.com").user_id == 2
+    assert raised_duplicate["value"] is True
+
+
+def test_register_user_returns_none_after_exhausting_conflict_retries(monkeypatch):
+    attempts = {"count": 0}
+
+    def always_conflict(self, *args, **kwargs):
+        attempts["count"] += 1
+        raise NotUniqueError("duplicate unique key")
+
+    monkeypatch.setattr(User, "save", always_conflict)
+
+    result = routes_module._register_user(
+        "stuck@example.com",
+        "secret123",
+        "Retry",
+        "Loop",
+        max_attempts=2,
+    )
+
+    assert result is None
+    assert attempts["count"] == 2
+    assert User.objects(email="stuck@example.com").count() == 0
+
+
+def test_register_shows_generic_error_when_user_creation_fails(client, monkeypatch):
+    monkeypatch.setattr(routes_module, "_register_user", lambda *args, **kwargs: None)
+
+    response = client.post(
+        "/register",
+        data={
+            "email": "failing@example.com",
+            "password": "secret123",
+            "password_confirm": "secret123",
+            "first_name": "Failing",
+            "last_name": "User",
+        },
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 200
+    assert b"Registration failed. Please check your details." in response.data
+    assert User.objects(email="failing@example.com").count() == 0
 
 
 def test_register_rate_limits_post_attempts(client, monkeypatch):
