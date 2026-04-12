@@ -9,6 +9,7 @@ from config import TestingConfig as _TestingConfig
 
 def test_application_bootstrap_uses_testing_config():
     assert app.config["TESTING"] is True
+    assert app.config["SESSION_COOKIE_SAMESITE"] == "Lax"
     assert app.config["SESSION_COOKIE_SECURE"] is False
 
 
@@ -20,6 +21,7 @@ def test_get_config_for_env_defaults_to_development(monkeypatch):
     config = get_config_for_env()
 
     assert isinstance(config, DevelopmentConfig)
+    assert config.SESSION_COOKIE_SAMESITE == "Lax"
     assert config.SESSION_COOKIE_SECURE is False
 
 
@@ -31,6 +33,7 @@ def test_get_config_for_env_returns_testing_config(monkeypatch):
     config = get_config_for_env()
 
     assert isinstance(config, _TestingConfig)
+    assert config.SESSION_COOKIE_SAMESITE == "Lax"
     assert config.TESTING is True
 
 
@@ -42,6 +45,7 @@ def test_get_config_for_env_returns_production_config(monkeypatch):
     config = get_config_for_env()
 
     assert isinstance(config, ProductionConfig)
+    assert config.SESSION_COOKIE_SAMESITE == "Lax"
     assert config.SESSION_COOKIE_SECURE is True
 
 

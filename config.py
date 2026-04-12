@@ -15,6 +15,7 @@ def _get_secret_key():
 class BaseConfig:
     DEBUG = False
     TESTING = False
+    SESSION_COOKIE_SAMESITE = "Lax"
     SESSION_COOKIE_SECURE = False
 
     def __init__(self):

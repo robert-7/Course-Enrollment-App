@@ -102,6 +102,19 @@ def test_login_omits_secure_cookie_attribute_when_disabled(
     assert "Secure;" not in _session_cookie_header(response)
 
 
+def test_login_sets_lax_samesite_cookie_attribute(client, registered_user):
+    response = client.post(
+        "/login",
+        data={
+            "email": registered_user.email,
+            "password": "secret12",
+        },
+        follow_redirects=False,
+    )
+
+    assert "SameSite=Lax" in _session_cookie_header(response)
+
+
 def test_login_failure_shows_error(client, registered_user):
     response = client.post(
         "/login",
