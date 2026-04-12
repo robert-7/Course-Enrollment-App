@@ -43,7 +43,7 @@ services:
   mongo-seed:
     image: mongo:8.2
     container_name: mongo-setup
-    links:
+    depends_on:
       - mongodb
     volumes:
       - ./mongo-setup:/mongo-setup:rw
@@ -61,6 +61,8 @@ services:
     depends_on:
       course-enrollment-app:
         condition: service_healthy
+      mongo-seed:
+        condition: service_completed_successfully
     command: >
       sh -lc "npm ci && npx playwright test e2e/ui-walkthrough.spec.js --project=chromium"
 
