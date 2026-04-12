@@ -5,6 +5,8 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: course-enrollment-app
+    # Keep Compose on Flask's dev server locally; the image default is Gunicorn.
+    command: ["flask", "run", "--host=0.0.0.0"]
     ports:
       - 5000:5000
     volumes:
