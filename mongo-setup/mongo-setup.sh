@@ -8,13 +8,14 @@ seed_collection() {
   local collection="$1"
   local json_file_path="$2"
   echo "Setting up ${DB} db with ${collection} collection from ${json_file_path}..."
-  mongoimport --host "${HOST}" \
-              --db "${DB}" \
-              --collection "${collection}" \
-              --type json \
-              --file "${json_file_path}" \
-              --jsonArray \
-              --drop
+  mongoimport \
+    --host "${HOST}" \
+    --db "${DB}" \
+    --collection "${collection}" \
+    --type json \
+    --file "${json_file_path}" \
+    --jsonArray \
+    --drop
   echo "Done setting ${collection} collection."
 }
 
