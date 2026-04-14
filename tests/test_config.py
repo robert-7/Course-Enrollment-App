@@ -1,6 +1,7 @@
 from datetime import timedelta
 
 import pytest
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 from application import app
 from config import DevelopmentConfig
@@ -17,6 +18,7 @@ def test_application_bootstrap_uses_testing_config():
     assert app.config["TESTING"] is True
     assert app.config["SESSION_COOKIE_SAMESITE"] == "Lax"
     assert app.config["SESSION_COOKIE_SECURE"] is False
+    assert isinstance(app.wsgi_app, ProxyFix)
 
 
 def test_get_config_for_env_defaults_to_development(monkeypatch):

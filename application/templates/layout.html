@@ -6,12 +6,12 @@
     <title>Network Operations University - Course Enrollment</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
           integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
-    <link rel="stylesheet" href="{{ url_for('static', filename='/css/main.css') }}"/>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}"/>
 </head>
 <body>
 
 <div class="container-fluid top-container d-flex align-items-center justify-content-center">
-    <img src="{{ url_for('static', filename='/images/nou-logo-200.png') }}">
+    <img src="{{ url_for('static', filename='images/nou-logo-200.png') }}">
     {% if session["username"] %}
         <span class="user">Welcome, {{ session["username"] }}</span>
     {% endif %}

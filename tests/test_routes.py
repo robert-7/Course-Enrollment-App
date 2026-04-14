@@ -28,6 +28,14 @@ def test_index_page_loads(client):
     assert response.status_code == 200
 
 
+def test_index_uses_normalized_static_asset_paths(client):
+    response = client.get("/index")
+
+    assert b'href="/static/css/main.css"' in response.data
+    assert b'src="/static/images/nou-logo-200.png"' in response.data
+    assert b"/static//" not in response.data
+
+
 def test_home_page_loads(client):
     response = client.get("/home")
 

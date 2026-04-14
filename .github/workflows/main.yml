@@ -9,6 +9,11 @@ on:  # yamllint disable-line rule:truthy
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
+# Temporarily force JavaScript-based GitHub Actions onto Node 24 so we catch
+# compatibility issues before GitHub's hosted runners remove Node 20 entirely.
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   lint:
@@ -16,7 +21,16 @@ jobs:
     steps:
       - uses: actions/checkout@v6.0.2
       - uses: actions/setup-python@v6.2.0
-      - uses: pre-commit/action@v3.0.1
+        with:
+          python-version: "3.13"
+          cache: "pip"
+          cache-dependency-path: requirements-dev.txt
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+      - name: Run linters
+        run: pre-commit run --all-files
 
   test:
     runs-on: ubuntu-latest
@@ -25,6 +39,8 @@ jobs:
       - uses: actions/setup-python@v6.2.0
         with:
           python-version: "3.13"
+          cache: "pip"
+          cache-dependency-path: requirements-dev.txt
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
