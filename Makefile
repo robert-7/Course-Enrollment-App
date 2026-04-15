@@ -1,4 +1,4 @@
-.PHONY: run test codecov e2e-demo e2e-fast e2e-docker seed lint clean setup
+.PHONY: run test codecov e2e-demo e2e-fast e2e-docker seed lint clean setup aws-teardown
 
 ## Generate .env with a random SECRET_KEY (skips if .env already exists)
 setup:
@@ -45,3 +45,7 @@ lint:
 ## Tear down containers and volumes
 clean:
 	docker compose down -v
+
+## Destroy the CDK-managed AWS rebuild stack
+aws-teardown:
+	cd infra && cdk destroy CourseEnrollmentAppStack --force
