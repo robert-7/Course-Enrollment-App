@@ -173,3 +173,96 @@ The current AWS deployment milestone is **v2.0.0**.
 
 To revert a bad deployment, re-tag a previous ECR image as `latest` and trigger a new ECS force-deployment,
 or use the ECS console to point the service at a prior task definition revision.
+
+---
+
+## CDK Rebuild Workflow
+
+Issue #60 adds a Python AWS CDK app under `infra/` that captures the current
+AWS deployment as a **same-name rebuild stack**. This stack is intended for a
+clean account or for use **after** manually tearing down the current hand-built
+resources. It does **not** import or adopt the existing manual ECS/ALB/ECR/IAM
+resources in place.
+
+### Scope of the CDK stack
+
+The CDK stack manages the AWS-only deployment resources for this app:
+
+- ECR repository
+- GitHub Actions OIDC provider and deploy role
+- ECS task execution role
+- Secure SSM parameters for `SECRET_KEY` and `MONGO_URI`
+- CloudWatch log group
+- ECS cluster, task definition, and Fargate service
+- ALB, target group, listeners, and security groups
+
+The following remain external to CDK:
+
+- MongoDB Atlas cluster and data
+- Namecheap DNS records
+- ACM DNS validation workflow
+
+The existing ACM certificate ARN is reused as an input rather than created by
+the stack.
+
+### Prerequisites
+
+- AWS CLI authentication configured for the target account
+- Node.js and the AWS CDK CLI installed locally
+- Python 3.9+ available locally
+- An existing ACM certificate ARN for `course-enrollment-app.robertlech.com`
+- An existing image already pushed to the ECR repository
+
+AWS documents that the CDK CLI is installed with `npm install -g aws-cdk`, and
+that Python CDK apps use standard Python tooling and require Node.js at synth
+time.
+
+### Required environment variables
+
+Export the following values before synthesizing or deploying the stack:
+
+```bash
+export CDK_VPC_ID=vpc-...
+export CDK_PUBLIC_SUBNET_IDS=subnet-...,subnet-...
+export CDK_CERTIFICATE_ARN=arn:aws:acm:us-east-1:...
+export CDK_IMAGE_TAG=<existing-ecr-image-tag>
+export CDK_SECRET_KEY=<strong-random-secret>
+export CDK_MONGO_URI=<mongodb-atlas-uri>
+```
+
+An example file is provided at `infra/.env.example`.
+
+### Local usage
+
+```bash
+cd infra
+python3 -m venv .venv
+. .venv/bin/activate
+pip install -r requirements.txt
+cdk synth
+```
+
+To deploy the rebuild stack after the old manually created stack has been
+removed:
+
+```bash
+cd infra
+cdk deploy CourseEnrollmentAppStack
+```
+
+To tear the CDK-managed stack down:
+
+```bash
+make aws-teardown
+```
+
+### Notes and limitations
+
+- The stack uses the current production resource names. This means a first
+  `cdk deploy` will conflict with the manually created resources unless those
+  resources have already been removed.
+- Account-level ECR registry scanning remains outside this stack; only the ECR
+  repository itself is modeled.
+- The CDK Python dependencies are distributed through PyPI as `aws-cdk-lib`
+  and `constructs`. The current versions used in this repo are `2.243.0` and
+  `10.5.1`, respectively.
