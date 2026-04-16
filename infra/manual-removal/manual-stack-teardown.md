@@ -5,6 +5,8 @@ for the Course Enrollment App if you do not want to use
 [`remove_manual_stack.sh`](/home/robert/src/github.com/robert-7/course-enrollment-app/infra/manual-removal/remove_manual_stack.sh).
 The shell scripts in this folder share their AWS resource names from
 [`common_manual_stack_vars.sh`](/home/robert/src/github.com/robert-7/course-enrollment-app/infra/manual-removal/common_manual_stack_vars.sh)
+and their common logging/AWS helper functions from
+[`common_manual_stack_helpers.sh`](/home/robert/src/github.com/robert-7/course-enrollment-app/infra/manual-removal/common_manual_stack_helpers.sh)
 so the teardown and verification logic stay aligned.
 
 Use this only for the old manually created stack. Do **not** use it against a

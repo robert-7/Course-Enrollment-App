@@ -4,8 +4,10 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_INFRA_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 DOTENV_FILE="${ROOT_INFRA_DIR}/.env"
-# shellcheck source=infra/manual-removal/common_manual_stack_vars.sh
+# shellcheck disable=SC1091
 source "${SCRIPT_DIR}/common_manual_stack_vars.sh"
+# shellcheck source=infra/manual-removal/common_manual_stack_helpers.sh
+source "${SCRIPT_DIR}/common_manual_stack_helpers.sh"
 
 WAIT_TIMEOUT_SECONDS=900
 WAIT_INTERVAL_SECONDS=10
@@ -35,51 +37,12 @@ Notes:
 EOF
 }
 
-
-log() {
-    printf '[INFO] %s\n' "$*"
-}
-
-
-warn() {
-    printf '[WARN] %s\n' "$*" >&2
-}
-
-
-die() {
-    printf '[ERROR] %s\n' "$*" >&2
-    exit 1
-}
-
-
-require_cmd() {
-    command -v "$1" >/dev/null 2>&1 || die "Required command not found: $1"
-}
-
-
-dotenv_value() {
-    local key="$1"
-    local file="$2"
-
-    if [[ ! -f "${file}" ]]; then
-        return 0
-    fi
-
-    grep -E "^${key}=" "${file}" | tail -n 1 | cut -d '=' -f 2-
-}
-
-
 as_list() {
     local value="$1"
     if [[ -z "${value}" || "${value}" == "None" ]]; then
         return 0
     fi
     printf '%s\n' "${value}" | tr '\t' '\n' | sed '/^$/d'
-}
-
-
-aws_regional() {
-    aws --region "${AWS_REGION}" "$@"
 }
 
 
@@ -354,11 +317,11 @@ EOF
 
 delete_ecs_service() {
     if service_gone; then
-        log "ECS service ${ECS_SERVICE_NAME} is already absent."
+        log_info "ECS service ${ECS_SERVICE_NAME} is already absent."
         return 0
     fi
 
-    log "Scaling ECS service ${ECS_SERVICE_NAME} to zero."
+    log_info "Scaling ECS service ${ECS_SERVICE_NAME} to zero."
     aws_regional ecs update-service \
         --cluster "${ECS_CLUSTER_NAME}" \
         --service "${ECS_SERVICE_NAME}" \
@@ -367,7 +330,7 @@ delete_ecs_service() {
 
     wait_until "ECS service ${ECS_SERVICE_NAME} to reach zero tasks" service_scaled_to_zero
 
-    log "Deleting ECS service ${ECS_SERVICE_NAME}."
+    log_info "Deleting ECS service ${ECS_SERVICE_NAME}."
     aws_regional ecs delete-service \
         --cluster "${ECS_CLUSTER_NAME}" \
         --service "${ECS_SERVICE_NAME}" \
@@ -384,13 +347,13 @@ delete_ecs_task_definitions() {
 
     arns="$(task_definition_arns)"
     if [[ -z "${arns}" || "${arns}" == "None" ]]; then
-        log "No active ECS task definition revisions found for family ${APP_NAME}."
+        log_info "No active ECS task definition revisions found for family ${APP_NAME}."
         return 0
     fi
 
     while IFS= read -r arn; do
         [[ -z "${arn}" ]] && continue
-        log "Deregistering ECS task definition ${arn}."
+        log_info "Deregistering ECS task definition ${arn}."
         aws_regional ecs deregister-task-definition \
             --task-definition "${arn}" \
             >/dev/null
@@ -400,11 +363,11 @@ delete_ecs_task_definitions() {
 
 delete_ecs_cluster() {
     if cluster_gone; then
-        log "ECS cluster ${ECS_CLUSTER_NAME} is already absent."
+        log_info "ECS cluster ${ECS_CLUSTER_NAME} is already absent."
         return 0
     fi
 
-    log "Deleting ECS cluster ${ECS_CLUSTER_NAME}."
+    log_info "Deleting ECS cluster ${ECS_CLUSTER_NAME}."
     aws_regional ecs delete-cluster --cluster "${ECS_CLUSTER_NAME}" >/dev/null
     wait_until "ECS cluster ${ECS_CLUSTER_NAME} deletion" cluster_gone
 }
@@ -417,7 +380,7 @@ delete_load_balancer() {
 
     lb_arn="$(load_balancer_arn)"
     if [[ -z "${lb_arn}" || "${lb_arn}" == "None" ]]; then
-        log "Load balancer ${ALB_NAME} is already absent."
+        log_info "Load balancer ${ALB_NAME} is already absent."
         return 0
     fi
 
@@ -428,13 +391,13 @@ delete_load_balancer() {
         2>/dev/null || true)"
     while IFS= read -r listener_arn; do
         [[ -z "${listener_arn}" ]] && continue
-        log "Deleting listener ${listener_arn}."
+        log_info "Deleting listener ${listener_arn}."
         aws_regional elbv2 delete-listener \
             --listener-arn "${listener_arn}" \
             >/dev/null || true
     done < <(as_list "${listener_arns}")
 
-    log "Deleting load balancer ${ALB_NAME}."
+    log_info "Deleting load balancer ${ALB_NAME}."
     aws_regional elbv2 delete-load-balancer \
         --load-balancer-arn "${lb_arn}" \
         >/dev/null
@@ -450,11 +413,11 @@ delete_target_group() {
 
     tg_arn="$(target_group_arn)"
     if [[ -z "${tg_arn}" || "${tg_arn}" == "None" ]]; then
-        log "Target group ${TARGET_GROUP_NAME} is already absent."
+        log_info "Target group ${TARGET_GROUP_NAME} is already absent."
         return 0
     fi
 
-    log "Deleting target group ${TARGET_GROUP_NAME}."
+    log_info "Deleting target group ${TARGET_GROUP_NAME}."
     aws_regional elbv2 delete-target-group \
         --target-group-arn "${tg_arn}" \
         >/dev/null
@@ -469,11 +432,11 @@ delete_security_group() {
 
     group_id="$(security_group_id "${group_name}")"
     if [[ -z "${group_id}" || "${group_id}" == "None" ]]; then
-        log "Security group ${group_name} is already absent."
+        log_info "Security group ${group_name} is already absent."
         return 0
     fi
 
-    log "Deleting security group ${group_name} (${group_id})."
+    log_info "Deleting security group ${group_name} (${group_id})."
     start_time="$(date +%s)"
     while true; do
         if aws_regional ec2 delete-security-group --group-id "${group_id}" >/dev/null 2>&1; then
@@ -488,7 +451,7 @@ delete_security_group() {
             die "Timed out deleting security group ${group_name}. It may still have dependencies."
         fi
 
-        warn "Security group ${group_name} still has dependencies. Waiting before retrying."
+        log_warn "Security group ${group_name} still has dependencies. Waiting before retrying."
         sleep "${WAIT_INTERVAL_SECONDS}"
     done
 
@@ -498,11 +461,11 @@ delete_security_group() {
 
 delete_log_group() {
     if ! log_group_exists; then
-        log "Log group ${LOG_GROUP_NAME} is already absent."
+        log_info "Log group ${LOG_GROUP_NAME} is already absent."
         return 0
     fi
 
-    log "Deleting log group ${LOG_GROUP_NAME}."
+    log_info "Deleting log group ${LOG_GROUP_NAME}."
     aws_regional logs delete-log-group --log-group-name "${LOG_GROUP_NAME}" >/dev/null
     wait_until "log group ${LOG_GROUP_NAME} deletion" log_group_gone
 }
@@ -512,11 +475,11 @@ delete_ssm_parameter() {
     local parameter_name="$1"
 
     if ! ssm_parameter_exists "${parameter_name}"; then
-        log "SSM parameter ${parameter_name} is already absent."
+        log_info "SSM parameter ${parameter_name} is already absent."
         return 0
     fi
 
-    log "Deleting SSM parameter ${parameter_name}."
+    log_info "Deleting SSM parameter ${parameter_name}."
     aws_regional ssm delete-parameter --name "${parameter_name}" >/dev/null
     wait_until "SSM parameter ${parameter_name} deletion" ssm_parameter_gone "${parameter_name}"
 }
@@ -530,7 +493,7 @@ delete_iam_role() {
     local inline_policy_name
 
     if ! role_exists "${role_name}"; then
-        log "IAM role ${role_name} is already absent."
+        log_info "IAM role ${role_name} is already absent."
         return 0
     fi
 
@@ -541,7 +504,7 @@ delete_iam_role() {
         2>/dev/null || true)"
     while IFS= read -r attached_policy_arn; do
         [[ -z "${attached_policy_arn}" ]] && continue
-        log "Detaching managed policy ${attached_policy_arn} from role ${role_name}."
+        log_info "Detaching managed policy ${attached_policy_arn} from role ${role_name}."
         aws iam detach-role-policy \
             --role-name "${role_name}" \
             --policy-arn "${attached_policy_arn}" \
@@ -555,14 +518,14 @@ delete_iam_role() {
         2>/dev/null || true)"
     while IFS= read -r inline_policy_name; do
         [[ -z "${inline_policy_name}" ]] && continue
-        log "Deleting inline policy ${inline_policy_name} from role ${role_name}."
+        log_info "Deleting inline policy ${inline_policy_name} from role ${role_name}."
         aws iam delete-role-policy \
             --role-name "${role_name}" \
             --policy-name "${inline_policy_name}" \
             >/dev/null
     done < <(as_list "${inline_policies}")
 
-    log "Deleting IAM role ${role_name}."
+    log_info "Deleting IAM role ${role_name}."
     aws iam delete-role --role-name "${role_name}" >/dev/null
     wait_until "IAM role ${role_name} deletion" role_gone "${role_name}"
 }
@@ -572,17 +535,17 @@ delete_oidc_provider() {
     local provider_arn
 
     if [[ "${DELETE_OIDC_PROVIDER}" != "true" ]]; then
-        warn "Skipping OIDC provider deletion. Re-run with --delete-oidc-provider if you want to remove ${OIDC_PROVIDER_URL}."
+        log_warn "Skipping OIDC provider deletion. Re-run with --delete-oidc-provider if you want to remove ${OIDC_PROVIDER_URL}."
         return 0
     fi
 
     provider_arn="$(oidc_provider_arn)"
     if [[ -z "${provider_arn}" ]]; then
-        log "OIDC provider ${OIDC_PROVIDER_URL} is already absent."
+        log_info "OIDC provider ${OIDC_PROVIDER_URL} is already absent."
         return 0
     fi
 
-    log "Deleting OIDC provider ${provider_arn}."
+    log_info "Deleting OIDC provider ${provider_arn}."
     aws iam delete-open-id-connect-provider \
         --open-id-connect-provider-arn "${provider_arn}" \
         >/dev/null
@@ -592,11 +555,11 @@ delete_oidc_provider() {
 
 delete_ecr_repository() {
     if ! ecr_repository_exists; then
-        log "ECR repository ${APP_NAME} is already absent."
+        log_info "ECR repository ${APP_NAME} is already absent."
         return 0
     fi
 
-    log "Deleting ECR repository ${APP_NAME} and any remaining images."
+    log_info "Deleting ECR repository ${APP_NAME} and any remaining images."
     aws_regional ecr delete-repository \
         --repository-name "${APP_NAME}" \
         --force \
@@ -662,4 +625,4 @@ delete_iam_role "${TASK_EXECUTION_ROLE_NAME}"
 delete_oidc_provider
 delete_ecr_repository
 
-log "Manual AWS stack teardown completed."
+log_success "Manual AWS stack teardown completed."

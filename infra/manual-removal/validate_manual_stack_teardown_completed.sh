@@ -2,8 +2,10 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# shellcheck source=infra/manual-removal/common_manual_stack_vars.sh
+# shellcheck disable=SC1091
 source "${SCRIPT_DIR}/common_manual_stack_vars.sh"
+# shellcheck source=infra/manual-removal/common_manual_stack_helpers.sh
+source "${SCRIPT_DIR}/common_manual_stack_helpers.sh"
 
 AWS_REGION="${AWS_REGION:-${AWS_DEFAULT_REGION:-us-east-1}}"
 export AWS_REGION
@@ -11,36 +13,15 @@ export AWS_DEFAULT_REGION="${AWS_REGION}"
 export AWS_PAGER=""
 
 
-log() {
-    printf '[INFO] %s\n' "$*"
-}
-
-
-fail() {
-    printf '[ERROR] %s\n' "$*" >&2
-    exit 1
-}
-
-
-require_cmd() {
-    command -v "$1" >/dev/null 2>&1 || fail "Required command not found: $1"
-}
-
-
-aws_regional() {
-    aws --region "${AWS_REGION}" "$@"
-}
-
-
 resource_absent() {
     local description="$1"
     shift
 
     if "$@" >/dev/null 2>&1; then
-        fail "${description} still exists."
+        die "${description} still exists."
     fi
 
-    log "${description} is absent."
+    log_success "${description} is absent."
 }
 
 
@@ -76,4 +57,4 @@ resource_absent \
     aws iam get-role \
         --role-name "${GITHUB_ACTIONS_ROLE_NAME}"
 
-log "Manual stack teardown verification completed successfully."
+log_success "Manual stack teardown verification completed successfully."
