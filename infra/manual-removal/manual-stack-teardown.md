@@ -62,6 +62,9 @@ Leave these external dependencies alone:
 
 The manually created stack includes these AWS resources:
 
+- CloudFormation console stacks that may own the ECS cluster/service names, such
+  as `Infra-ECS-Cluster-course-enrollment-app-*` and
+  `ECS-Console-V2-Service-course-enrollment-app-svc-course-enrollment-app-*`
 - ECS service `course-enrollment-app-svc`
 - ECS task definitions in family `course-enrollment-app`
 - ECS cluster `course-enrollment-app`
@@ -80,6 +83,7 @@ The manually created stack includes these AWS resources:
 
 Delete resources in this order to avoid dependency errors:
 
+1. Delete any leftover CloudFormation console stacks for the ECS cluster/service.
 1. Scale ECS service to zero and delete it.
 1. Deregister active ECS task definitions for family `course-enrollment-app`.
 1. Delete the ECS cluster `course-enrollment-app`.

@@ -25,6 +25,15 @@ resource_absent() {
 }
 
 
+no_matching_stacks_for_prefix() {
+    local prefix="$1"
+    local output
+
+    output="$(stack_names_with_prefix "${prefix}")"
+    [[ -z "${output}" || "${output}" == "None" ]]
+}
+
+
 require_cmd aws
 
 aws sts get-caller-identity >/dev/null
@@ -64,5 +73,23 @@ resource_absent \
     "IAM role ${GITHUB_ACTIONS_ROLE_NAME}" \
     aws iam get-role \
         --role-name "${GITHUB_ACTIONS_ROLE_NAME}"
+
+if no_matching_stacks_for_prefix "${CFN_SERVICE_STACK_PREFIX}"; then
+    log_success "No leftover CloudFormation ECS service stacks remain."
+else
+    die "A leftover CloudFormation ECS service stack still exists."
+fi
+
+if no_matching_stacks_for_prefix "${CFN_CLUSTER_STACK_PREFIX}"; then
+    log_success "No leftover CloudFormation ECS cluster stacks remain."
+else
+    die "A leftover CloudFormation ECS cluster stack still exists."
+fi
+
+if stack_exists_by_name "${CDK_REBUILD_STACK_NAME}"; then
+    die "CloudFormation stack ${CDK_REBUILD_STACK_NAME} still exists."
+else
+    log_success "CloudFormation stack ${CDK_REBUILD_STACK_NAME} is absent."
+fi
 
 log_success "Manual stack teardown verification completed successfully."

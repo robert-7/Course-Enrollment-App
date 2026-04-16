@@ -281,6 +281,12 @@ ecr_repository_gone() {
 }
 
 
+stack_gone() {
+    local stack_name="$1"
+    ! stack_exists_by_name "${stack_name}"
+}
+
+
 confirm() {
     if [[ "${ASSUME_YES}" == "true" ]]; then
         return 0
@@ -610,6 +616,44 @@ fi
 
 confirm
 
+delete_cloudformation_stack() {
+    local stack_name="$1"
+
+    if ! stack_exists_by_name "${stack_name}"; then
+        log_info "CloudFormation stack ${stack_name} is already absent."
+        return 0
+    fi
+
+    log_info "Deleting CloudFormation stack ${stack_name}."
+    aws cloudformation delete-stack --stack-name "${stack_name}"
+    aws cloudformation wait stack-delete-complete --stack-name "${stack_name}" >/dev/null 2>&1 || \
+        wait_until "CloudFormation stack ${stack_name} deletion" stack_gone "${stack_name}"
+}
+
+
+delete_discovered_cloudformation_stacks() {
+    local stack_name
+    local service_stacks
+    local cluster_stacks
+
+    service_stacks="$(stack_names_with_prefix "${CFN_SERVICE_STACK_PREFIX}")"
+    while IFS= read -r stack_name; do
+        [[ -z "${stack_name}" || "${stack_name}" == "None" ]] && continue
+        delete_cloudformation_stack "${stack_name}"
+    done < <(as_list "${service_stacks}")
+
+    cluster_stacks="$(stack_names_with_prefix "${CFN_CLUSTER_STACK_PREFIX}")"
+    while IFS= read -r stack_name; do
+        [[ -z "${stack_name}" || "${stack_name}" == "None" ]] && continue
+        delete_cloudformation_stack "${stack_name}"
+    done < <(as_list "${cluster_stacks}")
+
+    if stack_exists_by_name "${CDK_REBUILD_STACK_NAME}"; then
+        delete_cloudformation_stack "${CDK_REBUILD_STACK_NAME}"
+    fi
+}
+
+delete_discovered_cloudformation_stacks
 delete_ecs_service
 delete_ecs_task_definitions
 delete_ecs_cluster

@@ -261,7 +261,23 @@ class CourseEnrollmentAppStack(cdk.Stack):
             task_role=task_role,
         )
         if bootstrap_use_local_image:
-            container_image = ecs.ContainerImage.from_asset(str(repository_root))
+            container_image = ecs.ContainerImage.from_asset(
+                str(repository_root),
+                exclude=[
+                    ".git",
+                    ".github",
+                    ".pytest_cache",
+                    ".venv",
+                    "__pycache__",
+                    "infra/.venv",
+                    "infra/cdk.out",
+                    "infra/cdk.out*",
+                    "node_modules",
+                    "playwright-report",
+                    "test-results",
+                ],
+                ignore_mode=cdk.IgnoreMode.DOCKER,
+            )
         else:
             if not image_tag:
                 raise RuntimeError(
@@ -325,7 +341,7 @@ class CourseEnrollmentAppStack(cdk.Stack):
             )
         )
 
-        elbv2.CfnListener(
+        https_listener = elbv2.CfnListener(
             self,
             "HttpsListener",
             load_balancer_arn=load_balancer.load_balancer_arn,
@@ -343,7 +359,7 @@ class CourseEnrollmentAppStack(cdk.Stack):
             ],
         )
 
-        elbv2.CfnListener(
+        http_redirect_listener = elbv2.CfnListener(
             self,
             "HttpRedirectListener",
             load_balancer_arn=load_balancer.load_balancer_arn,
@@ -363,6 +379,11 @@ class CourseEnrollmentAppStack(cdk.Stack):
                 )
             ],
         )
+
+        service.node.add_dependency(load_balancer)
+        service.node.add_dependency(target_group)
+        service.node.add_dependency(https_listener)
+        service.node.add_dependency(http_redirect_listener)
 
         github_actions_role.add_to_policy(
             iam.PolicyStatement(

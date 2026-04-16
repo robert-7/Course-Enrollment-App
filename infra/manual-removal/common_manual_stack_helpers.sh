@@ -72,3 +72,25 @@ dotenv_value() {
 aws_regional() {
     aws --region "${AWS_REGION}" "$@"
 }
+
+
+stack_names_with_prefix() {
+    local prefix="$1"
+
+    aws cloudformation list-stacks \
+        --stack-status-filter CREATE_COMPLETE UPDATE_COMPLETE UPDATE_ROLLBACK_COMPLETE ROLLBACK_COMPLETE DELETE_FAILED CREATE_FAILED ROLLBACK_FAILED UPDATE_ROLLBACK_FAILED \
+        --query "StackSummaries[?starts_with(StackName, \`${prefix}\`)].StackName" \
+        --output text 2>/dev/null || true
+}
+
+
+stack_exists_by_name() {
+    local stack_name="$1"
+    local output
+
+    output="$(aws cloudformation list-stacks \
+        --stack-status-filter CREATE_COMPLETE UPDATE_COMPLETE UPDATE_ROLLBACK_COMPLETE ROLLBACK_COMPLETE DELETE_FAILED CREATE_FAILED ROLLBACK_FAILED UPDATE_ROLLBACK_FAILED \
+        --query "StackSummaries[?StackName==\`${stack_name}\`].StackName | [0]" \
+        --output text 2>/dev/null || true)"
+    [[ -n "${output}" && "${output}" != "None" ]]
+}

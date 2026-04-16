@@ -14,6 +14,44 @@ export AWS_REGION
 export AWS_DEFAULT_REGION="${AWS_REGION}"
 export AWS_PAGER=""
 
+DOCKER_DESKTOP_WSL_SOCKET="/mnt/wsl/docker-desktop-bind-mounts/Ubuntu/docker.sock"
+DOCKER_DESKTOP_WSL_CLI="/mnt/wsl/docker-desktop/cli-tools/usr/bin/docker"
+INFRA_VENV_ACTIVATE="${ROOT_INFRA_DIR}/.venv/bin/activate"
+VALIDATE_OUTDIR="/tmp/course-enrollment-app-cdk-out-validate"
+
+
+ensure_cdk_on_path() {
+    if command -v cdk >/dev/null 2>&1; then
+        return 0
+    fi
+
+    local nvm_dir="${NVM_DIR:-$HOME/.nvm}"
+    if [[ -s "${nvm_dir}/nvm.sh" ]]; then
+        # shellcheck disable=SC1090,SC1091
+        source "${nvm_dir}/nvm.sh"
+    fi
+}
+
+
+configure_docker_host() {
+    if [[ -S "${DOCKER_DESKTOP_WSL_SOCKET}" && -x "${DOCKER_DESKTOP_WSL_CLI}" ]]; then
+        export DOCKER_HOST="unix://${DOCKER_DESKTOP_WSL_SOCKET}"
+        export PATH="/mnt/wsl/docker-desktop/cli-tools/usr/bin:${PATH}"
+    fi
+}
+
+
+activate_infra_venv() {
+    if [[ -f "${INFRA_VENV_ACTIVATE}" ]]; then
+        # shellcheck disable=SC1090,SC1091
+        source "${INFRA_VENV_ACTIVATE}"
+    fi
+}
+
+
+ensure_cdk_on_path
+configure_docker_host
+activate_infra_venv
 
 require_cmd aws
 require_cmd docker
@@ -43,6 +81,15 @@ CERTIFICATE_STATUS="$(aws_regional acm describe-certificate \
 [[ "${CERTIFICATE_STATUS}" == "ISSUED" ]] || die "ACM certificate ${CERTIFICATE_ARN} is not ISSUED."
 log_success "ACM certificate is ISSUED."
 
+BOOTSTRAP_VERSION="$(
+    aws_regional ssm get-parameter \
+        --name /cdk-bootstrap/hnb659fds/version \
+        --query 'Parameter.Value' \
+        --output text 2>/dev/null || true
+)"
+[[ -n "${BOOTSTRAP_VERSION}" && "${BOOTSTRAP_VERSION}" != "None" ]] || die "CDK bootstrap stack is missing in this account/region. Run 'cdk bootstrap aws://${ACCOUNT_ID}/${AWS_REGION}' first."
+log_success "CDK bootstrap stack is present (version ${BOOTSTRAP_VERSION})."
+
 CONFIGURED_OIDC_ARN="$(dotenv_value CDK_GITHUB_OIDC_PROVIDER_ARN "${DOTENV_FILE}")"
 EXISTING_OIDC_ARN="$(
     aws iam list-open-id-connect-providers \
@@ -66,7 +113,8 @@ else
 fi
 
 pushd "${ROOT_INFRA_DIR}" >/dev/null
-cdk synth >/dev/null
+rm -rf "${VALIDATE_OUTDIR}"
+cdk synth --output "${VALIDATE_OUTDIR}" >/dev/null
 popd >/dev/null
 log_success "cdk synth completed successfully."
 
