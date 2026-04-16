@@ -250,6 +250,12 @@ cd infra
 cdk deploy CourseEnrollmentAppStack
 ```
 
+If you still need to remove the original manually created AWS stack before that
+first CDK deploy, the terminal-based teardown helpers now live under
+`infra/manual-removal/`. Please view the
+`[corresponding README](infra/manual-removal/manual-stack-teardown.md)`
+for more details on how to run it.
+
 To tear the CDK-managed stack down:
 
 ```bash

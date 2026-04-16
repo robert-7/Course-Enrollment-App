@@ -25,7 +25,7 @@ DELETE_OIDC_PROVIDER=false
 
 usage() {
     cat <<'EOF'
-Usage: bash infra/remove_manual_stack.sh [options]
+Usage: bash infra/manual-removal/remove_manual_stack.sh [options]
 
 Deletes the pre-CDK manually created AWS resources for the course enrollment
 app and waits for dependent resources to disappear before continuing.
