@@ -2,21 +2,11 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DOTENV_FILE="${SCRIPT_DIR}/.env"
+ROOT_INFRA_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+DOTENV_FILE="${ROOT_INFRA_DIR}/.env"
+# shellcheck source=infra/manual-removal/common_manual_stack_vars.sh
+source "${SCRIPT_DIR}/common_manual_stack_vars.sh"
 
-APP_NAME="course-enrollment-app"
-ECS_CLUSTER_NAME="course-enrollment-app"
-ECS_SERVICE_NAME="course-enrollment-app-svc"
-ALB_NAME="course-enrollment-app-alb"
-TARGET_GROUP_NAME="course-enrollment-app-tg"
-ALB_SECURITY_GROUP_NAME="alb-sg"
-TASK_SECURITY_GROUP_NAME="ecs-tasks-sg"
-LOG_GROUP_NAME="/ecs/course-enrollment-app"
-SECRET_KEY_PARAMETER_NAME="/course-enrollment-app/SECRET_KEY"
-MONGO_URI_PARAMETER_NAME="/course-enrollment-app/MONGO_URI"
-GITHUB_ACTIONS_ROLE_NAME="GitHubActions-CourseEnrollmentApp"
-TASK_EXECUTION_ROLE_NAME="ECSTaskExecutionRole-CourseEnrollmentApp"
-OIDC_PROVIDER_URL="token.actions.githubusercontent.com"
 WAIT_TIMEOUT_SECONDS=900
 WAIT_INTERVAL_SECONDS=10
 ASSUME_YES=false

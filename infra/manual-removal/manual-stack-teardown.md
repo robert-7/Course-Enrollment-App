@@ -3,9 +3,22 @@
 This document describes how to manually remove the **pre-CDK** AWS resources
 for the Course Enrollment App if you do not want to use
 [`remove_manual_stack.sh`](/home/robert/src/github.com/robert-7/course-enrollment-app/infra/manual-removal/remove_manual_stack.sh).
+The shell scripts in this folder share their AWS resource names from
+[`common_manual_stack_vars.sh`](/home/robert/src/github.com/robert-7/course-enrollment-app/infra/manual-removal/common_manual_stack_vars.sh)
+so the teardown and verification logic stay aligned.
 
 Use this only for the old manually created stack. Do **not** use it against a
 CDK-managed environment unless you intentionally want to bypass CloudFormation.
+
+## Validation Scripts
+
+This folder now includes two complementary validation scripts:
+
+- [`validate_stack_is_up.sh`](/home/robert/src/github.com/robert-7/course-enrollment-app/infra/manual-removal/validate_stack_is_up.sh)
+  checks that the stack is currently up and healthy. Run this before teardown,
+  and run it again after the CDK rebuild completes.
+- [`validate_manual_stack_teardown_completed.sh`](/home/robert/src/github.com/robert-7/course-enrollment-app/infra/manual-removal/validate_manual_stack_teardown_completed.sh)
+  checks that the old manual resources are gone after teardown.
 
 ## Assumptions
 

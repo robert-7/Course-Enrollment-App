@@ -1,12 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ECS_CLUSTER_NAME="course-enrollment-app"
-ECS_SERVICE_NAME="course-enrollment-app-svc"
-ALB_NAME="course-enrollment-app-alb"
-ECR_REPOSITORY_NAME="course-enrollment-app"
-SECRET_KEY_PARAMETER_NAME="/course-enrollment-app/SECRET_KEY"
-GITHUB_ACTIONS_ROLE_NAME="GitHubActions-CourseEnrollmentApp"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=infra/manual-removal/common_manual_stack_vars.sh
+source "${SCRIPT_DIR}/common_manual_stack_vars.sh"
 
 AWS_REGION="${AWS_REGION:-${AWS_DEFAULT_REGION:-us-east-1}}"
 export AWS_REGION
@@ -65,9 +62,9 @@ resource_absent \
         --names "${ALB_NAME}"
 
 resource_absent \
-    "ECR repository ${ECR_REPOSITORY_NAME}" \
+    "ECR repository ${APP_NAME}" \
     aws_regional ecr describe-repositories \
-        --repository-names "${ECR_REPOSITORY_NAME}"
+        --repository-names "${APP_NAME}"
 
 resource_absent \
     "SSM parameter ${SECRET_KEY_PARAMETER_NAME}" \

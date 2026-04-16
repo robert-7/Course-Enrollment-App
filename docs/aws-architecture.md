@@ -254,7 +254,11 @@ If you still need to remove the original manually created AWS stack before that
 first CDK deploy, the terminal-based teardown helpers now live under
 `infra/manual-removal/`. Please view the
 `[corresponding README](infra/manual-removal/manual-stack-teardown.md)`
-for more details on how to run it.
+for more details on how to run it. That folder includes:
+
+- `validate_stack_is_up.sh` for pre-teardown and post-rebuild health checks
+- `remove_manual_stack.sh` for the one-time manual-stack removal
+- `validate_manual_stack_teardown_completed.sh` for post-teardown confirmation
 
 To tear the CDK-managed stack down:
 
