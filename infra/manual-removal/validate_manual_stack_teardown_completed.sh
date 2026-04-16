@@ -4,7 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck disable=SC1091
 source "${SCRIPT_DIR}/common_manual_stack_vars.sh"
-# shellcheck source=infra/manual-removal/common_manual_stack_helpers.sh
+# shellcheck disable=SC1091
 source "${SCRIPT_DIR}/common_manual_stack_helpers.sh"
 
 AWS_REGION="${AWS_REGION:-${AWS_DEFAULT_REGION:-us-east-1}}"
@@ -29,13 +29,21 @@ require_cmd aws
 
 aws sts get-caller-identity >/dev/null
 
-resource_absent \
-    "ECS service ${ECS_SERVICE_NAME}" \
-    aws_regional ecs describe-services \
+service_absent() {
+    local output
+    output="$(aws_regional ecs describe-services \
         --cluster "${ECS_CLUSTER_NAME}" \
         --services "${ECS_SERVICE_NAME}" \
-        --query "services[?status!=\`INACTIVE\`]|[0]" \
-        --output text
+        --query 'services[0].status' \
+        --output text 2>/dev/null || true)"
+    [[ -z "${output}" || "${output}" == "None" || "${output}" == "INACTIVE" ]]
+}
+
+if service_absent; then
+    log_success "ECS service ${ECS_SERVICE_NAME} is absent."
+else
+    die "ECS service ${ECS_SERVICE_NAME} still exists."
+fi
 
 resource_absent \
     "ALB ${ALB_NAME}" \
